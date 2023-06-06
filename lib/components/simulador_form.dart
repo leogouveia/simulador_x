@@ -21,26 +21,25 @@ class _SimuladorFormState extends State<SimuladorForm> {
 
   Future<void> simulate() async {
     final navigator = Navigator.of(context);
+    SimulacaoDados? dadosSimulacao;
+    Warning? warning;
 
     var numberValue =
         valueController.text.replaceAll('.', '').replaceAll(',', '.');
     double value = double.tryParse(numberValue) ?? 0.0;
     int prazo = int.tryParse(prazoController.text) ?? 0;
 
-    SimulacaoDados? dadosSimulacao;
-    Warning? warning;
-
-    (await FetchSimulacao.getSimulacao(value, prazo)).fold(
-        (dadosSimulacaoResult) {
+    final result = await FetchSimulacao.getSimulacao(value, prazo);
+    result.fold((SimulacaoDados? dadosSimulacaoResult) {
       dadosSimulacao = dadosSimulacaoResult;
-    }, (warningResult) {
+    }, (Warning? warningResult) {
       warning = warningResult;
     });
 
     if (dadosSimulacao != null) {
       navigator.push(MaterialPageRoute(builder: (context) {
         return SimulacaoResultScreen(
-          simulacaoDados: simulationResult,
+          simulacaoDados: dadosSimulacao,
           valor: value,
           prazo: prazo,
         );

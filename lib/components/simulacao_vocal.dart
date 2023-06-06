@@ -226,6 +226,74 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
     });
   }
 
+  Future<void> finalizaImportacao(NavigatorState navigator) async {
+    SimulacaoDados? dadosSimulacao;
+    Warning? warning;
+    final valorDesejado = _valorDesejado.toDouble();
+    final prazo = _prazo;
+    (await FetchSimulacao.getSimulacao(valorDesejado, prazo)).fold(
+        (dadosSimulacaoResult) {
+      dadosSimulacao = dadosSimulacaoResult;
+    }, (warningResult) {
+      warning = warningResult;
+    });
+
+    setState(() {
+      _interactionStarted = false;
+      _iconMic = const Icon(Icons.mic);
+      _animate = false;
+    });
+
+    if (dadosSimulacao != null) {
+      navigator.push(
+        MaterialPageRoute(
+          builder: (context) => SimulacaoResultScreen(
+            valor: valorDesejado,
+            prazo: prazo,
+            simulacaoDados: dadosSimulacao,
+          ),
+        ),
+      );
+      resetState();
+      await _speak(
+          'Simulação realizada com sucesso. Veja o resultado na tela.');
+    } else {
+      String mensagem = 'Houve um problema na simulação.';
+      if (warning != null && warning!.mensagem != "") {
+        mensagem = warning!.mensagem;
+      }
+      _showWarning(mensagem);
+      await _speak('Houve um problema na simulação. Tente novamente.');
+    }
+  }
+
+  Future<void> _showWarning(String warningText) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Atenção'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(warningText),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final navigator = Navigator.of(context);
@@ -263,72 +331,6 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
         tooltip: 'Listen',
         child: _iconMic,
       ),
-    );
-  }
-
-  Future<void> finalizaImportacao(NavigatorState navigator) async {
-    SimulacaoDados? dadosSimulacao;
-    Warning? warning;
-    (await FetchSimulacao.getSimulacao(_valorDesejado.toDouble(), _prazo)).fold(
-        (dadosSimulacaoResult) {
-      dadosSimulacao = dadosSimulacaoResult;
-    }, (warningResult) {
-      warning = warningResult;
-    });
-
-    setState(() {
-      _interactionStarted = false;
-      _iconMic = const Icon(Icons.mic);
-      _animate = false;
-    });
-
-    if (dadosSimulacao != null) {
-      resetState();
-      navigator.push(
-        MaterialPageRoute(
-          builder: (context) => SimulacaoResultScreen(
-            valor: _valorDesejado.toDouble(),
-            prazo: _prazo,
-            simulacaoDados: dadosSimulacao,
-          ),
-        ),
-      );
-      await _speak(
-          'Simulação realizada com sucesso. Veja o resultado na tela.');
-    } else {
-      String mensagem = 'Houve um problema na simulação.';
-      if (warning != null && warning!.mensagem != "") {
-        mensagem = warning!.mensagem;
-      }
-      _showWarning(mensagem);
-      await _speak('Houve um problema na simulação. Tente novamente.');
-    }
-  }
-
-  Future<void> _showWarning(String warningText) async {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Atenção'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(warningText),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

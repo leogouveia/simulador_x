@@ -9,8 +9,8 @@ import 'package:simulador_x/models/warning_model.dart';
 class FetchSimulacao {
   static Future<Either<SimulacaoDados, Warning>> getSimulacao(
       double valorDesejado, int prazo) async {
-    Warning? warning;
-    SimulacaoDados? simulacaoDados;
+    Warning? warningResult;
+    SimulacaoDados? simulacaoDadosResult;
 
     var url = Uri.parse(
         'https://apphackaixades.azurewebsites.net/api/Simulacao'); // Replace with your API endpoint
@@ -25,11 +25,12 @@ class FetchSimulacao {
     );
 
     if (response.statusCode == 200) {
-      simulacaoDados = SimulacaoDados.fromJson(json.decode(response.body));
-      return Left(simulacaoDados);
+      simulacaoDadosResult =
+          SimulacaoDados.fromJson(json.decode(response.body));
+      return Left(simulacaoDadosResult);
     } else if (response.statusCode == 400) {
-      warning = Warning.fromJson(json.decode(response.body));
-      return Right(warning);
+      warningResult = Warning.fromJson(json.decode(response.body));
+      return Right(warningResult);
     } else {
       throw const HttpException('Erro ao buscar simulação');
     }
