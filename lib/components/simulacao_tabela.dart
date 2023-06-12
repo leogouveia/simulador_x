@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:simulador_x/models/simulacao_dados.dart';
 
 class SimulacaoTabela extends StatelessWidget {
-  List<Parcela> parcelas = [];
-  String nomeModalidade;
-  SimulacaoTabela(
+  final List<Parcela> parcelas;
+  final String nomeModalidade;
+  const SimulacaoTabela(
       {Key? key, required this.parcelas, required this.nomeModalidade})
       : super(key: key);
 
@@ -17,10 +17,10 @@ class SimulacaoTabela extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "Modalidade ${nomeModalidade}",
+            "Modalidade $nomeModalidade",
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
               shrinkWrap: true,

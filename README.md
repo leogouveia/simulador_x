@@ -5,7 +5,7 @@ Consiste num App Mobile, feito em Flutter e configurado para ser buildado para A
 
 ## Como Buildar
 
-Para buildar é nessário desativar o Tree Shaking Icons, visto incompatibilidade com o Tema.
+Para buildar é necessário desativar o Tree Shaking Icons, visto incompatibilidade com o Tema.
 
 ### Buildar para Android:
 

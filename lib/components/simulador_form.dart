@@ -1,104 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simulador_x/models/simulacao_dados.dart';
-import 'package:simulador_x/models/warning_model.dart';
-import 'package:simulador_x/screens/simulacao_resultado_screen.dart';
-import 'package:simulador_x/services/fetch_simulacao.dart';
-import 'package:simulador_x/utils/x-colors.dart';
+import 'package:simulador_x/providers/app_provider.dart';
+import 'package:simulador_x/screens/simulacao_loading_screen.dart';
+import 'package:simulador_x/theme/app_colors.dart';
 
-class SimuladorForm extends StatefulWidget {
+class SimuladorForm extends ConsumerStatefulWidget {
   const SimuladorForm({Key? key}) : super(key: key);
 
   @override
-  State<SimuladorForm> createState() => _SimuladorFormState();
+  ConsumerState<SimuladorForm> createState() => _SimuladorFormState();
 }
 
-class _SimuladorFormState extends State<SimuladorForm> {
+class _SimuladorFormState extends ConsumerState<SimuladorForm> {
   TextEditingController valueController = TextEditingController();
   TextEditingController prazoController = TextEditingController();
+
+  NavigatorState? _navigator;
 
   String result = '';
   SimulacaoDados? simulationResult;
 
   Future<void> simulate() async {
-    final navigator = Navigator.of(context);
-    SimulacaoDados? dadosSimulacao;
-    Warning? warning;
+    final valorDesejado = double.tryParse(
+          valueController.text.replaceAll('.', '').replaceAll(',', '.'),
+        ) ??
+        0;
+    final prazo = int.tryParse(prazoController.text) ?? 0;
 
-    var numberValue =
-        valueController.text.replaceAll('.', '').replaceAll(',', '.');
-    double value = double.tryParse(numberValue) ?? 0.0;
-    int prazo = int.tryParse(prazoController.text) ?? 0;
+    ref.read(appProvider.notifier).setSimulacao(valorDesejado, prazo);
 
-    final result = await FetchSimulacao.getSimulacao(value, prazo);
-    result.fold((SimulacaoDados? dadosSimulacaoResult) {
-      dadosSimulacao = dadosSimulacaoResult;
-    }, (Warning? warningResult) {
-      warning = warningResult;
-    });
-
-    if (dadosSimulacao != null) {
-      navigator.push(MaterialPageRoute(builder: (context) {
-        return SimulacaoResultScreen(
-          simulacaoDados: dadosSimulacao,
-          valor: value,
-          prazo: prazo,
-        );
-      }));
-    } else {
-      String mensagem = 'Houve um problema na simulação.';
-      if (warning != null && warning!.mensagem != "") {
-        mensagem = warning!.mensagem;
-      }
-      _showWarning(mensagem);
-    }
+    _navigator?.push(
+        MaterialPageRoute(builder: (context) => SimulacaoLoadingScreen()));
 
     valueController.clear();
     prazoController.clear();
     setState(() {});
   }
 
-  Future<void> _showWarning(String warningText) async {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Atenção'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(warningText),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
+    _navigator = Navigator.of(context);
+    final formKey = GlobalKey<FormState>();
     return Center(
       child: IntrinsicHeight(
         child: Container(
           width: 400,
           decoration: BoxDecoration(
-            color: kxColors.cinza.lighter_1,
+            color: AppColors.cinzaLighter1,
             borderRadius: BorderRadius.circular(6.0),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Form(
-              key: _formKey,
+              key: formKey,
               child: Column(
                 children: [
                   Text("Informe os valores para simulação",
@@ -114,9 +69,10 @@ class _SimuladorFormState extends State<SimuladorForm> {
                       //if value is nto a number/numeric
                       var numberValue =
                           value.replaceAll('.', '').replaceAll(',', '.');
-                      if (double.tryParse(numberValue!) == null) {
+                      if (double.tryParse(numberValue) == null) {
                         return 'Preencha com um número';
                       }
+                      return null;
                     },
                     decoration: const InputDecoration(
                       label: Text("Valor desejado"),
@@ -130,9 +86,10 @@ class _SimuladorFormState extends State<SimuladorForm> {
                         return 'Preencha o campo';
                       }
                       //if value is nto a number/numeric
-                      if (double.tryParse(value!) == null) {
+                      if (double.tryParse(value) == null) {
                         return 'Preencha com um número';
                       }
+                      return null;
                     },
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -153,13 +110,7 @@ class _SimuladorFormState extends State<SimuladorForm> {
                     ),
                     onPressed: () {
                       // Validate returns true if the form is valid, or false otherwise.
-                      if (_formKey.currentState!.validate()) {
-                        // If the form is valid, display a snackbar. In the real world,
-                        // you'd often call a server or save the information in a database.
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Processando solicitação')),
-                        );
+                      if (formKey.currentState!.validate()) {
                         simulate();
                       }
                     },

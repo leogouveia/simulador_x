@@ -4,7 +4,7 @@ import 'package:simulador_x/layouts/app_bar.dart';
 import 'package:simulador_x/models/simulacao_dados.dart';
 import 'package:simulador_x/screens/simulacao_resultado_modalidade_screen.dart';
 
-import '../layouts/my-button.dart';
+import '../layouts/my_button.dart';
 
 class SimulacaoResultScreen extends StatelessWidget {
   final SimulacaoDados? simulacaoDados;
@@ -35,7 +35,7 @@ class SimulacaoResultScreen extends StatelessWidget {
                   final List<Parcela>? parcelasPrice = simulacaoDados
                       ?.resultadoSimulacao
                       .firstWhere((e) => e.tipo.toLowerCase() == 'price')
-                      ?.parcelas;
+                      .parcelas;
 
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -54,7 +54,7 @@ class SimulacaoResultScreen extends StatelessWidget {
                   final List<Parcela>? parcelasSac = simulacaoDados
                       ?.resultadoSimulacao
                       .firstWhere((e) => e.tipo.toLowerCase() == 'sac')
-                      ?.parcelas;
+                      .parcelas;
 
                   Navigator.of(context).push(
                     MaterialPageRoute(

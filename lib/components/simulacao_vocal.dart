@@ -5,57 +5,57 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:dart_numero_extenso_br/dart_converter_extenso_br.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:simulador_x/models/simulacao_dados.dart';
 import 'package:simulador_x/models/warning_model.dart';
+import 'package:simulador_x/providers/app_provider.dart';
+import 'package:simulador_x/screens/simulacao_loading_screen.dart';
 import 'package:simulador_x/screens/simulacao_resultado_screen.dart';
 import 'package:simulador_x/services/fetch_simulacao.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart';
+import 'package:simulador_x/utils/speech_to_text_helper.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
-class SimulacaoVocal extends StatefulWidget {
+class SimulacaoVocal extends ConsumerStatefulWidget {
   final Function(int, int)? onPressed;
 
   const SimulacaoVocal({super.key, this.onPressed});
 
   @override
-  State<SimulacaoVocal> createState() => _SimulacaoVocalState();
+  ConsumerState<SimulacaoVocal> createState() => _SimulacaoVocalState();
 }
 
-class _SimulacaoVocalState extends State<SimulacaoVocal> {
+class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
   late FlutterTts flutterTts;
-  late SpeechToText _speechToText;
+  late SpeechToTextHelper _speechToText;
 
   int _valorDesejado = 0;
   int _prazo = 0;
   bool _interactionStarted = false;
-  bool _hasSimulacao = false;
-
-  var _iconMic = const Icon(Icons.mic_off);
+  var _iconMic = const Icon(Icons.mic);
   bool _animate = false;
 
   bool get isIOS => !kIsWeb && Platform.isIOS;
   bool get isAndroid => !kIsWeb && Platform.isAndroid;
-  bool get isWindows => !kIsWeb && Platform.isWindows;
   bool get isWeb => kIsWeb;
 
   TtsState ttsState = TtsState.stopped;
-
   get isPlaying => ttsState == TtsState.playing;
-
   get isStopped => ttsState == TtsState.stopped;
-
   get isPaused => ttsState == TtsState.paused;
-
   get isContinued => ttsState == TtsState.continued;
 
   @override
   void initState() {
     super.initState();
-    _initSpeech();
+    initSpeechToText();
     _initTts();
+  }
+
+  initSpeechToText() async {
+    _speechToText = SpeechToTextHelper();
+    await _speechToText.initialize();
   }
 
   // TTS
@@ -89,7 +89,7 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
-        print("error: $msg");
+        // print("error: $msg");
         ttsState = TtsState.stopped;
       });
     });
@@ -98,61 +98,22 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
   Future<void> _configTts() async {
     await flutterTts.awaitSpeakCompletion(true);
     await flutterTts.setLanguage("pt-BR");
-    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setSpeechRate(isAndroid ? 0.5 : 1);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);
   }
 
   Future<void> _speak(String text) async {
-    await flutterTts.speak(text);
+    try {
+      await flutterTts.speak(text);
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future _stopSpeaking() async {
     var result = await flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
-  }
-
-  // Speech to text
-  void _initSpeech() async {
-    _speechToText = SpeechToText();
-    await _speechToText.initialize();
-    setState(() {});
-  }
-
-  Future<String> _startListening() async {
-    var completer = Completer<String>();
-
-    try {
-      await _speechToText.listen(
-        onResult: (SpeechRecognitionResult result) async {
-          try {
-            if (result.recognizedWords.length > 3) {
-              if (!completer.isCompleted) {
-                completer.complete(result.recognizedWords);
-                _speechToText.stop();
-              }
-              _speechToText.stop();
-            } else if (result.finalResult) {
-              if (!completer.isCompleted) {
-                completer.complete(result.recognizedWords);
-              }
-              _speechToText.stop();
-              await Future.delayed(const Duration(seconds: 10));
-              completer.complete("");
-            }
-          } catch (e) {
-            print(e);
-            _speechToText.cancel();
-            completer.completeError(e);
-          }
-        },
-      );
-    } catch (e) {
-      _speechToText.cancel();
-      completer.completeError(e);
-    }
-
-    return completer.future;
   }
 
   int? validaPrazo(String prazo) {
@@ -175,50 +136,102 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
     return null;
   }
 
+  Future<int> _tryAnswer(
+      String question, String confirm, dynamic parseValue) async {
+    int answer = 0;
+    String listenedWords = "";
+
+    var tries = 3;
+
+    do {
+      if (tries < 3) {
+        await _speak("Desculpe, não entendi. Poderia repetir?");
+      }
+
+      await _speak(question);
+      listenedWords = await _speechToText.startListening();
+      if (listenedWords.toLowerCase() == 'cancelar') {
+        return -1;
+      }
+
+      final valor = parseValue(listenedWords);
+      if (valor > 0) {
+        answer = valor;
+        await _speak(confirm.replaceAll("#", valor.toString()));
+        break;
+
+        // await _speak("Deseja continuar?");
+        // var listenedWords = await _speechToText.startListening();
+        // if (listenedWords.toLowerCase() == 'sim' ||
+        //     listenedWords.toLowerCase() == 'ok') {
+        //   break;
+        // } else {
+        //   return -1;
+        // }
+      }
+
+      tries--;
+    } while (tries > 0);
+
+    return answer;
+  }
+
   Future<bool> _voiceScript() async {
-    await _speak("Olá, eu sou seu Simulador.");
-    var listenedWords = "";
+    try {
+      await _speak("Olá, eu sou o Simulador X.");
 
-    await _speak("Qual valor gostaria de simular?");
+      final valorDesejado = await _tryAnswer(
+          "Qual valor deseja simular?",
+          "Você disse # reais?",
+          (String value) => ConverterExtenso.converter(value).toInt());
+      if (valorDesejado <= 0) {
+        if (valorDesejado == 0) {
+          await _speak(
+              "Desculpe, não consegui te entender. Tente novamente ou preencha o formulário.");
+        }
+        await _speak("Cancelando simulação.");
+        resetState();
+        return false;
+      }
 
-    listenedWords = await _startListening().catchError((e) {
-      print(e.message);
-      return e.message;
-    });
+      final prazo = await _tryAnswer(
+          "Muito bem, qual o prazo desejado em meses?",
+          "Você disse # meses?",
+          (String value) => validaPrazo(value));
+      if (valorDesejado <= 0) {
+        if (valorDesejado == 0) {
+          await _speak("Desculpe, não consegui te entender.");
+        }
+        await _speak("Cancelando simulação.");
+        resetState();
+        return false;
+      }
 
-    final valorDesejado = ConverterExtenso.converter(listenedWords).toInt();
+      await _speak("Ok, estou realizando a simulação.");
 
-    if (valorDesejado == 0) {
-      await _speak("Desculpe, não entendi.");
+      ref
+          .read(appProvider.notifier)
+          .setSimulacao(valorDesejado.toDouble(), prazo);
+
+      setState(() {
+        _valorDesejado = valorDesejado;
+        _prazo = prazo;
+      });
+
+      return true;
+    } on Exception catch (e) {
+      print(e);
+      if (e == "O idioma do sistema deve ser Português (Brasil)") {
+        await _speak("O idioma do sistema deve ser Português (Brasil)");
+      } else
+        await _speak("Houve um erro ao tentar te ouvir. Cancelando simulação.");
+      resetState();
       return false;
     }
-
-    await _speak("Você disse $valorDesejado reais.");
-
-    await _speak("Muito bem, qual o prazo desejado em meses?");
-    listenedWords = await _startListening();
-
-    var prazo = validaPrazo(listenedWords);
-    if (prazo == null) {
-      await _speak("Desculpe, não entendi.");
-      return false;
-    }
-
-    await _speak("Você disse $prazo meses?");
-    await _speak("Ok, estou realizando a simulação.");
-
-    setState(() {
-      _valorDesejado = valorDesejado;
-      _prazo = prazo;
-      _hasSimulacao = true;
-    });
-
-    return true;
   }
 
   void resetState() {
     setState(() {
-      _hasSimulacao = false;
       _valorDesejado = 0;
       _prazo = 0;
       _animate = false;
@@ -227,71 +240,17 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
   }
 
   Future<void> finalizaImportacao(NavigatorState navigator) async {
-    SimulacaoDados? dadosSimulacao;
-    Warning? warning;
-    final valorDesejado = _valorDesejado.toDouble();
-    final prazo = _prazo;
-    (await FetchSimulacao.getSimulacao(valorDesejado, prazo)).fold(
-        (dadosSimulacaoResult) {
-      dadosSimulacao = dadosSimulacaoResult;
-    }, (warningResult) {
-      warning = warningResult;
-    });
+    navigator.push(MaterialPageRoute(
+        builder: (context) => SimulacaoLoadingScreen(
+              vocal: true,
+              vocalSpeak: _speak,
+            )));
 
     setState(() {
       _interactionStarted = false;
       _iconMic = const Icon(Icons.mic);
       _animate = false;
     });
-
-    if (dadosSimulacao != null) {
-      navigator.push(
-        MaterialPageRoute(
-          builder: (context) => SimulacaoResultScreen(
-            valor: valorDesejado,
-            prazo: prazo,
-            simulacaoDados: dadosSimulacao,
-          ),
-        ),
-      );
-      resetState();
-      await _speak(
-          'Simulação realizada com sucesso. Veja o resultado na tela.');
-    } else {
-      String mensagem = 'Houve um problema na simulação.';
-      if (warning != null && warning!.mensagem != "") {
-        mensagem = warning!.mensagem;
-      }
-      _showWarning(mensagem);
-      await _speak('Houve um problema na simulação. Tente novamente.');
-    }
-  }
-
-  Future<void> _showWarning(String warningText) async {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Atenção'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(warningText),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -308,23 +267,35 @@ class _SimulacaoVocalState extends State<SimulacaoVocal> {
       child: FloatingActionButton(
         onPressed: () async {
           if (_interactionStarted) {
+            // If interaction is started, stop listening
             await _stopSpeaking();
-            await _speechToText.stop();
+
+            await _speechToText.stopListening();
+
             setState(() {
               _interactionStarted = false;
               _iconMic = const Icon(Icons.mic_off);
               _animate = false;
             });
           } else {
+            // else, start listening
+
             setState(() {
               _interactionStarted = true;
-              _iconMic = const Icon(Icons.mic);
+              _iconMic = const Icon(Icons.mic_off);
               _animate = true;
             });
 
-            final hasDados = await _voiceScript();
-            if (hasDados) {
-              await finalizaImportacao(navigator);
+            try {
+              final hasDados = await _voiceScript();
+              if (hasDados) {
+                await finalizaImportacao(navigator);
+              }
+            } catch (error) {
+              print(error);
+              await _speak(
+                  "Houve um erro ao tentar te ouvir. Cancelando simulação.");
+              resetState();
             }
           }
         },

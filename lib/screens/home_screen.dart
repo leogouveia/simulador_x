@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:simulador_x/components/simulacao_vocal.dart';
 import 'package:simulador_x/components/simulador_form.dart';
 import 'package:simulador_x/layouts/app_bar.dart';
-import 'package:simulador_x/response.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.title});
@@ -17,10 +16,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return const Scaffold(
       appBar: MyAppBar(title: 'Simulador Caixa'),
-      body: Responsive(
-        mobile: SimuladorForm(),
-        tablet: SimuladorForm(),
-        desktop: SimuladorForm(),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [SimuladorForm()],
+        ),
       ),
       floatingActionButton: SimulacaoVocal(),
     );

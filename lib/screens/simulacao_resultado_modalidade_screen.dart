@@ -5,8 +5,8 @@ import 'package:simulador_x/models/simulacao_dados.dart';
 
 class SimulacaoResultadoModalidade extends StatelessWidget {
   final String nomeModalidade;
-  List<Parcela> parcelas = [];
-  SimulacaoResultadoModalidade(
+  final List<Parcela> parcelas;
+  const SimulacaoResultadoModalidade(
       {super.key, required this.nomeModalidade, required this.parcelas});
 
   @override

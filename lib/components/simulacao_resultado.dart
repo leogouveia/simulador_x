@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:simulador_x/models/simulacao_dados.dart';
-import 'package:simulador_x/utils/x-colors.dart';
+import 'package:simulador_x/theme/app_colors.dart';
 
 class SimulacaoResultado extends StatelessWidget {
   final SimulacaoDados? simulacaoDados;
@@ -22,90 +22,105 @@ class SimulacaoResultado extends StatelessWidget {
       margin: const EdgeInsets.all(10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: kxColors.azul.standard,
+        color: AppColors.azul,
         borderRadius: BorderRadius.circular(6.0),
       ),
-      child: SizedBox(
-        height: 100,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      "Valor",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 50),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        "Valor",
+                        style: TextStyle(
+                          color: AppColors.cinzaLighter2,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8.0),
-                    Text("R\$ ${numberFormat.format(valor)} "),
-                  ],
-                ),
-                const SizedBox(height: 8.0),
-                Row(
-                  children: [
-                    const Text(
-                      "Prazo",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8.0),
+                      Text(
+                        "R\$ ${numberFormat.format(valor)} ",
+                        style: const TextStyle(
+                          color: AppColors.cinzaLighter2,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      const Text(
+                        "Prazo",
+                        style: TextStyle(
+                          color: AppColors.cinzaLighter2,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        prazo.toString(),
+                        style: const TextStyle(
+                          color: AppColors.cinzaLighter2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const VerticalDivider(
+                color: AppColors.azulLighter1,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Descricao Produto',
+                    style: TextStyle(
+                      color: AppColors.cinzaLighter2,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 8.0),
-                    Text(prazo.toString()),
-                  ],
-                ),
-              ],
-            ),
-            VerticalDivider(
-              color: kxColors.azul.lighter_1,
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Descricao Produto',
-                  style: TextStyle(
-                    color: kxColors.cinza.lighter_2,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  simulacaoDados?.descricaoProduto ?? "",
-                  style: TextStyle(
-                    color: kxColors.cinza.lighter_2,
+                  const SizedBox(height: 8.0),
+                  Text(
+                    simulacaoDados?.descricaoProduto ?? "",
+                    style: const TextStyle(
+                      color: AppColors.cinzaLighter2,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            VerticalDivider(
-              color: kxColors.azul.lighter_1,
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Taxa de Juros',
-                  style: TextStyle(
-                    color: kxColors.cinza.lighter_2,
-                    fontWeight: FontWeight.bold,
+                ],
+              ),
+              const VerticalDivider(
+                color: AppColors.azulLighter1,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Taxa de Juros',
+                    style: TextStyle(
+                      color: AppColors.cinzaLighter2,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  "${((simulacaoDados?.taxaJuros ?? 0.0) * 100)?.toStringAsFixed(2) ?? 0}%",
-                  style: TextStyle(
-                    color: kxColors.cinza.lighter_2,
+                  const SizedBox(height: 8.0),
+                  Text(
+                    "${((simulacaoDados?.taxaJuros ?? 0.0) * 100).toStringAsFixed(2)}%",
+                    style: const TextStyle(
+                      color: AppColors.cinzaLighter2,
+                    ),
                   ),
-                ),
-              ],
-            )
-          ],
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
