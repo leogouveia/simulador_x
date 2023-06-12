@@ -9,7 +9,11 @@ Para buildar é necessário desativar o Tree Shaking Icons, visto incompatibilid
 
 ### Buildar para Android:
 
-$ flutter build apk --no-tree-shake-icons
+$ flutter build apk
+
+### Instalar no celular conectado:
+
+$ flutter install
 
 ## Exemplo Uso
 
@@ -22,9 +26,7 @@ _Veja exemplo de uso_:
 ## TODOS
 
 - Ajustes devem ser feitos para buildar para iOS.
-- Criar icones para o App e Splash screen
 - Melhorar tratamento de erro na opção de interação vocal
-- Melhorar leiaute no resultado.
 - Melhorar Temas para integraçao com DSC.
 - Criar testes.
 
