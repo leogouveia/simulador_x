@@ -1,19 +1,13 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:dart_numero_extenso_br/dart_converter_extenso_br.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:simulador_x/models/simulacao_dados.dart';
-import 'package:simulador_x/models/warning_model.dart';
 import 'package:simulador_x/providers/app_provider.dart';
 import 'package:simulador_x/screens/simulacao_loading_screen.dart';
-import 'package:simulador_x/screens/simulacao_resultado_screen.dart';
-import 'package:simulador_x/services/fetch_simulacao.dart';
 import 'package:simulador_x/utils/speech_to_text_helper.dart';
+import 'package:simulador_x/utils/tts_helper.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -27,93 +21,30 @@ class SimulacaoVocal extends ConsumerStatefulWidget {
 }
 
 class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
-  late FlutterTts flutterTts;
+  late TtsHelper tts = TtsHelper();
   late SpeechToTextHelper _speechToText;
 
-  int _valorDesejado = 0;
-  int _prazo = 0;
   bool _interactionStarted = false;
   var _iconMic = const Icon(Icons.mic);
   bool _animate = false;
-
-  bool get isIOS => !kIsWeb && Platform.isIOS;
-  bool get isAndroid => !kIsWeb && Platform.isAndroid;
-  bool get isWeb => kIsWeb;
-
-  TtsState ttsState = TtsState.stopped;
-  get isPlaying => ttsState == TtsState.playing;
-  get isStopped => ttsState == TtsState.stopped;
-  get isPaused => ttsState == TtsState.paused;
-  get isContinued => ttsState == TtsState.continued;
+  bool errorInitSpeechToText = false;
 
   @override
   void initState() {
     super.initState();
-    initSpeechToText();
-    _initTts();
+    initServices();
   }
 
-  initSpeechToText() async {
+  initServices() async {
     _speechToText = SpeechToTextHelper();
-    await _speechToText.initialize();
-  }
-
-  // TTS
-  void _initTts() async {
-    flutterTts = FlutterTts();
-    _configTts();
-
-    flutterTts.setCompletionHandler(() {
-      setState(() {
-        ttsState = TtsState.stopped;
-      });
-    });
-
-    flutterTts.setCancelHandler(() {
-      setState(() {
-        ttsState = TtsState.stopped;
-      });
-    });
-
-    flutterTts.setPauseHandler(() {
-      setState(() {
-        ttsState = TtsState.paused;
-      });
-    });
-
-    flutterTts.setContinueHandler(() {
-      setState(() {
-        ttsState = TtsState.continued;
-      });
-    });
-
-    flutterTts.setErrorHandler((msg) {
-      setState(() {
-        // print("error: $msg");
-        ttsState = TtsState.stopped;
-      });
-    });
-  }
-
-  Future<void> _configTts() async {
-    await flutterTts.awaitSpeakCompletion(true);
-    await flutterTts.setLanguage("pt-BR");
-    await flutterTts.setSpeechRate(isAndroid ? 0.5 : 1);
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.0);
-  }
-
-  Future<void> _speak(String text) async {
     try {
-      await flutterTts.speak(text);
-    } catch (e) {
-      print(e);
+      await tts.initTts();
+      await _speechToText.initialize();
+    } catch (error) {
+      setState(() {
+        errorInitSpeechToText = true;
+      });
     }
-  }
-
-  Future _stopSpeaking() async {
-    var result = await flutterTts.stop();
-    if (result == 1) setState(() => ttsState = TtsState.stopped);
   }
 
   int? validaPrazo(String prazo) {
@@ -145,10 +76,10 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
 
     do {
       if (tries < 3) {
-        await _speak("Desculpe, não entendi. Poderia repetir?");
+        await tts.speak("Desculpe, não entendi. Poderia repetir?");
       }
 
-      await _speak(question);
+      await tts.speak(question);
       listenedWords = await _speechToText.startListening();
       if (listenedWords.toLowerCase() == 'cancelar') {
         return -1;
@@ -157,10 +88,11 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
       final valor = parseValue(listenedWords);
       if (valor > 0) {
         answer = valor;
-        await _speak(confirm.replaceAll("#", valor.toString()));
+        await tts.speak(confirm.replaceAll("#", valor.toString()));
         break;
 
-        // await _speak("Deseja continuar?");
+        // TODO: implementar confirmação
+        // await tts.speak("Deseja continuar?");
         // var listenedWords = await _speechToText.startListening();
         // if (listenedWords.toLowerCase() == 'sim' ||
         //     listenedWords.toLowerCase() == 'ok') {
@@ -178,7 +110,7 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
 
   Future<bool> _voiceScript() async {
     try {
-      await _speak("Olá, eu sou o Simulador X.");
+      await tts.speak("Olá, eu sou o Simulador X.");
 
       final valorDesejado = await _tryAnswer(
           "Qual valor deseja simular?",
@@ -186,10 +118,10 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
           (String value) => ConverterExtenso.converter(value).toInt());
       if (valorDesejado <= 0) {
         if (valorDesejado == 0) {
-          await _speak(
+          await tts.speak(
               "Desculpe, não consegui te entender. Tente novamente ou preencha o formulário.");
         }
-        await _speak("Cancelando simulação.");
+        await tts.speak("Cancelando simulação.");
         resetState();
         return false;
       }
@@ -200,31 +132,28 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
           (String value) => validaPrazo(value));
       if (valorDesejado <= 0) {
         if (valorDesejado == 0) {
-          await _speak("Desculpe, não consegui te entender.");
+          await tts.speak("Desculpe, não consegui te entender.");
         }
-        await _speak("Cancelando simulação.");
+        await tts.speak("Cancelando simulação.");
         resetState();
         return false;
       }
 
-      await _speak("Ok, estou realizando a simulação.");
+      await tts.speak("Ok, estou realizando a simulação.");
 
       ref
           .read(appProvider.notifier)
           .setSimulacao(valorDesejado.toDouble(), prazo);
 
-      setState(() {
-        _valorDesejado = valorDesejado;
-        _prazo = prazo;
-      });
-
       return true;
     } on Exception catch (e) {
       print(e);
-      if (e == "O idioma do sistema deve ser Português (Brasil)") {
-        await _speak("O idioma do sistema deve ser Português (Brasil)");
-      } else
-        await _speak("Houve um erro ao tentar te ouvir. Cancelando simulação.");
+      if (e.toString() == "O idioma do sistema deve ser Português (Brasil)") {
+        await tts.speak("O idioma do sistema deve ser Português (Brasil)");
+      } else {
+        await tts
+            .speak("Houve um erro ao tentar te ouvir. Cancelando simulação.");
+      }
       resetState();
       return false;
     }
@@ -232,8 +161,6 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
 
   void resetState() {
     setState(() {
-      _valorDesejado = 0;
-      _prazo = 0;
       _animate = false;
       _iconMic = const Icon(Icons.mic);
     });
@@ -243,7 +170,7 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
     navigator.push(MaterialPageRoute(
         builder: (context) => SimulacaoLoadingScreen(
               vocal: true,
-              vocalSpeak: _speak,
+              vocalSpeak: tts.speak,
             )));
 
     setState(() {
@@ -256,6 +183,9 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
   @override
   Widget build(BuildContext context) {
     final navigator = Navigator.of(context);
+    // if (errorInitSpeechToText) {
+    //   return Container();
+    // }
     return AvatarGlow(
       glowColor: Theme.of(context).colorScheme.secondary,
       endRadius: 50.0,
@@ -266,9 +196,28 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
       animate: _animate,
       child: FloatingActionButton(
         onPressed: () async {
+          if (errorInitSpeechToText) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                  title: const Text("Alerta"),
+                  content: const Text("Ocorreu um erro ao iniciar o microfone."
+                      "\nVerifique as permissões do aplicativo."
+                      "\nE seu sistema está em Português (Brasil)."),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          resetState();
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Ok")),
+                  ]),
+            );
+            return;
+          }
           if (_interactionStarted) {
             // If interaction is started, stop listening
-            await _stopSpeaking();
+            await tts.stopSpeaking();
 
             await _speechToText.stopListening();
 
@@ -293,7 +242,7 @@ class _SimulacaoVocalState extends ConsumerState<SimulacaoVocal> {
               }
             } catch (error) {
               print(error);
-              await _speak(
+              await tts.speak(
                   "Houve um erro ao tentar te ouvir. Cancelando simulação.");
               resetState();
             }

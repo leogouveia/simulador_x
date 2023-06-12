@@ -14,7 +14,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.0+1
 
 environment:
   sdk: ">=3.0.3 <4.0.0"
@@ -40,7 +40,7 @@ dependencies:
   flutter_tts: ^3.7.0
   avatar_glow: ^2.0.2
   flutter_riverpod: ^2.3.6
-
+  syncfusion_flutter_charts: ^21.2.9
   dart_numero_extenso_br:
     git:
       url: https://github.com/leogouveia/dart_numero_extenso_br.git
@@ -66,8 +66,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/theme.json
-    - assets/images/elemento_sintese.svg
+    - assets/images/
 
     # To add assets to your application, add an assets section, like this:
     # assets:

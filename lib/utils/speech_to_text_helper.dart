@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -11,18 +10,18 @@ class SpeechToTextHelper {
   Completer<String> completer = Completer<String>();
   bool hasSpeech = false;
   bool _speechEnabled = false;
-  final _listenForSecs = 5;
+  static const _listenForSecs = 5;
   String _status = '';
 
   final void Function(dynamic error)? onError;
   final void Function(String status)? onStatus;
 
   static void _defaultOnError(dynamic error) {
-    print("Error: $error");
+    // print("Error: $error");
   }
 
   static void _defaultOnStatus(String status) {
-    print("Status: $status");
+    // print("Status: $status");
   }
 
   SpeechToTextHelper(
@@ -40,17 +39,18 @@ class SpeechToTextHelper {
 
     _speechEnabled = true;
     var systemLocale = await speechToText.systemLocale();
-    var locales = await speechToText.locales();
+    // var locales = await speechToText.locales();
     var currentLocaleId = systemLocale?.localeId ?? '';
-    var currentLocaleName = systemLocale?.name ?? '';
+    // var currentLocaleName = systemLocale?.name ?? '';
     if (currentLocaleId.toLowerCase() != "pt_br") {
-      completer
-          .completeError("O idioma do sistema deve ser Português (Brasil)");
+      throw Exception("O idioma do sistema deve ser Português (Brasil)");
+      // completer
+      //     .completeError("O idioma do sistema deve ser Português (Brasil)");
     }
   }
 
   void _onError(dynamic error) async {
-    print(error);
+    // print(error);
     if (error.errorMsg == 'error_no_match') {
       await speechToText.cancel();
       return completer.complete("");
@@ -101,8 +101,7 @@ class SpeechToTextHelper {
 
     try {
       await speechToText.listen(
-        listenFor: Duration(seconds: _listenForSecs),
-        // onDevice: Platform.isAndroid ? true : false,
+        listenFor: const Duration(seconds: _listenForSecs),
         localeId: "pt_BR",
         partialResults: false,
         onResult: _onResult,
@@ -120,7 +119,7 @@ class SpeechToTextHelper {
   /// and the SpeechToText plugin supports setting timeouts on the
   /// listen method.
   Future stopListening() async {
-    await speechToText?.stop();
+    await speechToText.stop();
   }
 
   String get status {

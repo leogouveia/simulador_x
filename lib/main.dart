@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl_standalone.dart';
 import 'package:simulador_x/screens/home_screen.dart';
+import 'package:simulador_x/screens/simulacao_form_screen.dart';
+import 'package:simulador_x/screens/simulacao_resultado_screen.dart';
 import 'package:simulador_x/theme/app_colors.dart';
 import 'package:simulador_x/theme/app_theme.dart';
 
@@ -32,7 +34,13 @@ class MyApp extends StatelessWidget {
       title: 'Simulador CAIXA',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(),
-      home: const HomeScreen(title: 'Simulador CAIXA'),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(title: 'Simulador CAIXA'),
+        '/form': (context) => const SimulacaoFormScreen(),
+        '/loading': (context) => const SimulacaoFormScreen(),
+        '/resultado_simulacao': (context) => const SimulacaoResultScreen(),
+      },
     );
   }
 }

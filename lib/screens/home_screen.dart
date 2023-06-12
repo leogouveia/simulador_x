@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:simulador_x/components/simulacao_vocal.dart';
-import 'package:simulador_x/components/simulador_form.dart';
-import 'package:simulador_x/layouts/app_bar.dart';
+import 'package:simulador_x/widgets/app_scaffold.dart';
+import 'package:simulador_x/widgets/simulacao_recepcao.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.title});
@@ -14,15 +13,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: MyAppBar(title: 'Simulador Caixa'),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [SimuladorForm()],
-        ),
-      ),
-      floatingActionButton: SimulacaoVocal(),
+    return const AppScaffold(
+      body: SimulacaoRecepcao(),
     );
   }
 }

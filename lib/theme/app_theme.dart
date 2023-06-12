@@ -30,13 +30,18 @@ class AppTheme {
     ),
     displayMedium: TextStyle(
       fontFamily: 'Futura BT',
+      fontWeight: FontWeight.w700,
+      color: AppColors.azul,
     ),
     displaySmall: TextStyle(
       fontFamily: 'Futura BT',
+      fontWeight: FontWeight.w700,
+      color: AppColors.azul,
     ),
     titleMedium: TextStyle(
       fontFamily: 'Futura BT',
-      color: AppColors.grafite,
+      fontWeight: FontWeight.w700,
+      color: AppColors.azul,
     ),
   );
 

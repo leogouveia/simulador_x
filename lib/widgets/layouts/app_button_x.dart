@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class MyButton extends StatelessWidget {
+class AppButtonX extends StatelessWidget {
   final String buttonText;
   final VoidCallback? onTap;
-  const MyButton({super.key, required this.buttonText, this.onTap});
+  const AppButtonX({super.key, required this.buttonText, this.onTap});
 
   @override
   Widget build(BuildContext context) {

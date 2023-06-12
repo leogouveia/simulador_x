@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:simulador_x/layouts/app_bar.dart';
 import 'package:simulador_x/models/simulacao_dados.dart';
 import 'package:simulador_x/models/warning_model.dart';
 import 'package:simulador_x/providers/app_provider.dart';
-import 'package:simulador_x/screens/simulacao_resultado_screen.dart';
+import 'package:simulador_x/providers/resultado_simulacao_provider.dart';
 import 'package:simulador_x/services/fetch_simulacao.dart';
-import 'package:simulador_x/components/warning.dart' as WarningWidget;
+import 'package:simulador_x/theme/app_colors.dart';
+import 'package:simulador_x/widgets/app_scaffold.dart';
+import 'package:simulador_x/widgets/warning.dart' as warning_widget;
 
 class SimulacaoLoadingScreen extends ConsumerStatefulWidget {
   const SimulacaoLoadingScreen({Key? key, this.vocalSpeak, this.vocal = false})
@@ -16,7 +17,7 @@ class SimulacaoLoadingScreen extends ConsumerStatefulWidget {
   final Future<void> Function(String text)? vocalSpeak;
   final bool vocal;
   @override
-  _SimulacaoLoadingScreenState createState() => _SimulacaoLoadingScreenState();
+  createState() => _SimulacaoLoadingScreenState();
 }
 
 class _SimulacaoLoadingScreenState
@@ -43,27 +44,30 @@ class _SimulacaoLoadingScreenState
       warning = warningResult;
     });
 
-    await Future.delayed(const Duration(seconds: 2));
+    final setSimulacaoDados =
+        ref.read(resultadoSimulacaoProvider.notifier).setResultado;
+    if (dadosSimulacao != null) {
+      setSimulacaoDados(dadosSimulacao!);
+    }
+    // await Future.delayed(const Duration(seconds: 60));
+
     return (dadosSimulacao, warning);
   }
 
   @override
   Widget build(BuildContext context) {
-    final simulacaoForm = ref.watch(appProvider);
-
-    return Scaffold(
-      appBar: const MyAppBar(title: 'Simulador Caixa'),
+    return AppScaffold(
       body: FutureBuilder<(SimulacaoDados?, Warning?)>(
           future: _fetchSimulacaoFuture,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              final (data, warning) = snapshot.data!;
+              final (_, warning) = snapshot.data!;
               if (warning != null) {
                 if (widget.vocal) {
                   widget.vocalSpeak!("Atenção, ${warning.mensagem}.");
                 }
                 return Center(
-                  child: WarningWidget.Warning(
+                  child: warning_widget.Warning(
                     warningText: warning.mensagem,
                   ),
                 );
@@ -74,14 +78,9 @@ class _SimulacaoLoadingScreenState
               }
 
               SchedulerBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(context)
-                    .pushReplacement(MaterialPageRoute(builder: (context) {
-                  return SimulacaoResultScreen(
-                    prazo: simulacaoForm.valorPrazo,
-                    valor: simulacaoForm.valorDesejado,
-                    simulacaoDados: data,
-                  );
-                }));
+                Navigator.of(context).popAndPushNamed('/resultado_simulacao');
+                // Navigator.of(context).pop();
+                // Navigator.of(context).push(route);
               });
               return Container();
             }
@@ -92,19 +91,27 @@ class _SimulacaoLoadingScreenState
               }
 
               return Center(
-                child: WarningWidget.Warning(
+                child: warning_widget.Warning(
                   warningText: mensagem,
                 ),
               );
             }
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 20),
-                  Text('Carregando...'),
-                ],
+            return Center(
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(6.0),
+                color: AppColors.cinzaLighter1,
+                child: const Padding(
+                  padding: EdgeInsets.all(30.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 20),
+                      Text('Carregando...'),
+                    ],
+                  ),
+                ),
               ),
             );
           }),
