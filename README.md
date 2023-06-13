@@ -19,7 +19,7 @@ $ flutter install
 
 _Veja exemplo de uso_:
 
-[![Veja uso do app](https://i.imgur.com/1nSV6Bom.png) ](https://youtube.com/shorts/u5gooia5V80)
+[![Veja uso do app](https://i.imgur.com/FefVLNol.png)](https://youtube.com/shorts/u5gooia5V80)
 
 ---
 
